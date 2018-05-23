@@ -92,33 +92,37 @@
 	}
 	
 	RightClick.prototype.executeOperation = function(event) {
+        let selectStart = this._DOMElements.someText.selectionStart;
+        let selectEnd = this._DOMElements.someText.selectionEnd;
+        alert(this._storedText);
 		if(!event.target.classList.contains("inactive")) {
 			switch(event.target.id) {
-				case "Cut" : this.cut(event);
+				case "Cut" : this.cut(selectStart,selectEnd);
 							break;
-				case "Copy" : this.copy(event);
+				case "Copy" : this.copy(selectStart,selectEnd);
 							break;
-				case "Paste" : this.paste(event);
+				case "Paste" : this.paste(selectStart,selectEnd);
 							break;
-				case "Select All" : this.selectAll(event);
+				case "Select All" : this.selectAll(selectStart,selectEnd);
 							break;
 			}
 		}
 	}
 	
-	RightClick.prototype.cut = function(event) {
-		console.log(window.clipboardData);
+	RightClick.prototype.cut = function(selectStart,selectEnd) {
+        this._storedText = this._DOMElements.someText.value.substring(selectStart,selectEnd);
+		//this._DOMElements.someText.value.splice(selectStart,this._selText.length);
 	}
 	
-	RightClick.prototype.copy = function(event) {
-		
+	RightClick.prototype.copy = function(selectStart,selectEnd) {
+		this._storedText = this._DOMElements.someText.value.substring(selectStart,selectEnd);
 	}
 	
-	RightClick.prototype.paste = function(event) {
-		
+	RightClick.prototype.paste = function() {
+		alert(this._storedText);
 	}
 	
-	RightClick.prototype.selectAll = function(event) {
+	RightClick.prototype.selectAll = function() {
 		this._DOMElements.someText.select();
 	}
 	

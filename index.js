@@ -12,7 +12,7 @@
 			someText : document.getElementById("someText")
 		};
 		document.addEventListener("click",this.clickHandler.bind(this));
-		document.addEventListener("keydown",this.escKeyHandler.bind(this));
+		someText.addEventListener("keydown",this.keyHandler.bind(this));
 		someText.addEventListener("contextmenu",this.rightClickHandler.bind(this));
 	}
 	
@@ -39,24 +39,45 @@
 		this.hideContextMenu();
 	}
 	
-	RightClick.prototype.escKeyHandler = function(event) {
+	RightClick.prototype.keyHandler = function(event) {
 		if(event.keyCode === 27) {
 			this.hideContextMenu();
+		}
+		else if(event.code === "KeyX" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			this.executeOperation({target:{id: "Cut"},type:event.type});
+		}
+		else if(event.code === "KeyC" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			this.executeOperation({target:{id: "Copy"},type:event.type});
+		}
+		else if(event.code === "KeyV" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			this.executeOperation({target:{id: "Paste"},type:event.type});
+		}
+		else if(event.code === "KeyA" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			this.executeOperation({target:{id: "Select All"},type:event.type});
 		}
 	}
 	
 	RightClick.prototype.rightClickHandler = function(event) {
 		event.preventDefault();
 		this.showContextMenu(event.clientX,event.clientY);
-		this.disableInactiveItems();
+		let {inactiveItems,activeItems} = this.disableInactiveItems();
+		for(let inactiveItem of inactiveItems) {
+			inactiveItem.item.classList.add("inactive");
+		}
+		for(let activeItem of activeItems) {
+			activeItem.item.classList.remove("inactive");
+		} 
 	}
 	
 	RightClick.prototype.disableInactiveItems = function() {
-		let activeItems = [];
+		let activeItems = [];	
 		let inactiveItems = [];
 		let selectStart = this._DOMElements.someText.selectionStart;
 		let selectEnd = this._DOMElements.someText.selectionEnd;
-		//console.log([selectStart,selectEnd]);
 		let selectAll = this._DOMElements.menuItems.filter(menuItem => menuItem.func === "Select All");
 		if(this._DOMElements.someText.value.length < 1 || (selectStart === 0 && selectEnd === this._DOMElements.someText.value.length)) {
 			inactiveItems = selectAll;
@@ -64,7 +85,6 @@
 		else {
 			activeItems = selectAll;
 		}
-		//console.log(inactiveItems);
 		let cutCopy = this._DOMElements.menuItems.filter(menuItem => menuItem.func === "Cut" || menuItem.func === "Copy");
 		if(selectStart === selectEnd) {
 			inactiveItems = [...inactiveItems, ...cutCopy];
@@ -72,13 +92,14 @@
 		else {
 			activeItems = [...activeItems, ...cutCopy];
 		}
-		//if() handle if paste is disabled
-		for(let inactiveItem of inactiveItems) {
-			inactiveItem.item.classList.add("inactive");
+		let paste = this._DOMElements.menuItems.filter(menuItem => menuItem.func === "Paste");
+		if(this._storedText.length) {
+			activeItems = [...activeItems, ...paste];
 		}
-		for(let activeItem of activeItems) {
-			activeItem.item.classList.remove("inactive");
+		else {
+			inactiveItems = [...inactiveItems, ...paste];
 		}
+		return {inactiveItems,activeItems} ;
 	}
 	
 	RightClick.prototype.showContextMenu = function(left,top) {
@@ -92,10 +113,10 @@
 	}
 	
 	RightClick.prototype.executeOperation = function(event) {
-        let selectStart = this._DOMElements.someText.selectionStart;
-        let selectEnd = this._DOMElements.someText.selectionEnd;
-        alert(this._storedText);
-		if(!event.target.classList.contains("inactive")) {
+		console.log(event);
+		if((event.type === "click" && !event.target.classList.contains("inactive")) || event.type === "keydown") {
+			let selectStart = this._DOMElements.someText.selectionStart;
+			let selectEnd = this._DOMElements.someText.selectionEnd;
 			switch(event.target.id) {
 				case "Cut" : this.cut(selectStart,selectEnd);
 							break;
@@ -111,21 +132,23 @@
 	
 	RightClick.prototype.cut = function(selectStart,selectEnd) {
         this._storedText = this._DOMElements.someText.value.substring(selectStart,selectEnd);
-		//this._DOMElements.someText.value.splice(selectStart,this._selText.length);
+		this._DOMElements.someText.value = this._DOMElements.someText.value.substring(0,selectStart) 
+		+ this._DOMElements.someText.value.substring(selectEnd);
 	}
 	
 	RightClick.prototype.copy = function(selectStart,selectEnd) {
 		this._storedText = this._DOMElements.someText.value.substring(selectStart,selectEnd);
 	}
 	
-	RightClick.prototype.paste = function() {
-		alert(this._storedText);
+	RightClick.prototype.paste = function(selectStart,selectEnd) {
+		this._DOMElements.someText.value = this._DOMElements.someText.value.substring(0,selectStart) + this._storedText
+		+ this._DOMElements.someText.value.substring(selectEnd);
 	}
 	
 	RightClick.prototype.selectAll = function() {
 		this._DOMElements.someText.select();
 	}
 	
-	let newClick = new RightClick();
+	new RightClick();
 	
 })();
